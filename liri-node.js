@@ -1,3 +1,8 @@
+//spotify saves to log.txt
+//next, get twitter and movies 
+//how to clear log.txt? 
+//how to retrieve past searches? 
+
 //requires
 
 var liri = require("./keys.js");
@@ -21,7 +26,7 @@ var flag;
 var dataToAdd=[];
 
 
-/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////READ RANDOM.TXT FILE ////////////
 if (command == "do-what-it-says") {
 
   fs.readFile("random.txt", "utf8", function (error, data) {
@@ -117,17 +122,17 @@ if (command == "my-tweets") {
       //show results: 
       for (i = 0; i < data.tracks.items.length; i++) {
         // if ((data.tracks.items[i].name).includes(input1)) {
-            console.log(i);
-          // var artist=data.tracks.items[i].album.artists[0].name;
-          // dataToAdd.push(artist);
-          // var album =data.tracks.items[i].album.name;
-          // dataToAdd.push(album);
-          // var song = data.tracks.items[i].name;
-          // dataToAdd.push(song);
-          // var preview = data.tracks.items[i].preview_url;
-          // dataToAdd.push(preview);
-
-          // console.log(dataToAdd);
+            
+          var artist=data.tracks.items[i].album.artists[0].name;
+          dataToAdd.push(artist);
+          var album =data.tracks.items[i].album.name;
+          dataToAdd.push(album);
+          var song = data.tracks.items[i].name;
+          dataToAdd.push(song);
+          var preview = data.tracks.items[i].preview_url;
+          dataToAdd.push(preview);
+          // console.log("Array "+ i + " " + dataToAdd);
+          
           console.log("Result " + (i + 1));
           console.log("===========");
           console.log("The artist: " + data.tracks.items[i].album.artists[0].name);
@@ -136,16 +141,16 @@ if (command == "my-tweets") {
           console.log("A preview link of the song from Spotify: " + data.tracks.items[i].preview_url);
           console.log("");
 
-        
         // }//if
       } // for ends
+      write();
     }//else
 
   });//function
 
 } //end spotify
 
-/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////MOVIE 
 else if (command == 'movie-this') {
 
   if (typeof input == 'undefined') {
@@ -173,19 +178,25 @@ else if (command == 'movie-this') {
   }); //request
 
 } //movie ends
-///////////////////////////
- 
-  // fs.appendFile("log.txt", dataToAdd, function(err) {
-  //   if (err) { 
-  //     console.log(err)
-  //   }
-  //     else {
-  //       console.log("content added")
-  //     }
-  //   });
- 
-     // dataToAdd=[];
+
+///////////////////////////Adds to a file
+//Spotify's dataToAdd array should be full, but here it shows as empty. 
+
 }//search()
+ function write(){
+ // console.log(dataToAdd);
+  fs.appendFile("log.txt", dataToAdd, function(err) {
+    if (err) { 
+      console.log(err)
+    }
+      else {
+        // console.log(dataToAdd);
+        console.log("content added")
+      }
+    });
+}
+     // dataToAdd=[];
+
 
 // ### BONUS
 
