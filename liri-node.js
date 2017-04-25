@@ -1,20 +1,44 @@
+//requires
+
 var liri = require("./keys.js");
+var request = require("request");
+var Twitter = require("twitter");
+var spotify = require("spotify");
+var fs = require("fs");
+
+//keys for twitter
 
 var consumerKey = liri.twitterKeys.consumer_key;
 var consumerSecret = liri.twitterKeys.consumer_secret;
 var accessTokenKey = liri.twitterKeys.access_token_key;
 var accessTokenSecret = liri.twitterKeys.access_token_secret;
 
+//variables 
+
 var command = process.argv[2];
 var input = process.argv[3];
 var flag;
+var dataToAdd=[];
 
-var request = require("request");
-var Twitter = require("twitter");
-var spotify = require("spotify");
-var fs = require("fs");
 
 /////////////////////////////////////////////////////////////////////
+if (command == "do-what-it-says") {
+
+  fs.readFile("random.txt", "utf8", function (error, data) {
+    var a=data.indexOf(",");
+    command=data.slice(0,(a)); 
+    input=data.slice(a+1);
+    console.log(command);
+    console.log(input);
+    search();
+  });
+
+}
+else {search()}
+
+function search() {  
+
+//////////////////////////////////////////////////////TWITTER
 
 if (command == "my-tweets") {
 
@@ -32,55 +56,78 @@ if (command == "my-tweets") {
     if (!error) {
       for (i = 0; i < 10; i++) {
         var info = tweets[i].text;
-        // var info=JSON.stringify(tweets, null, 2);
+        console.log ("Result " + (i+1));
+        console.log ("**********")
         console.log(info);
+        console.log ("");
       }
 
     }
   });
 
-  // * This will show your last 20 tweets and when they were created at in your terminal/bash window.
+///////////////////////////////////////////////////////SPOTIFY 
 
-} else if (command == 'spotify-this-song') {
+} 
 
-  if (typeof input == 'undefined') {
-    flag = true;
-    input = "sign";
+  else if (command == 'spotify-this-song') {
 
-  }
+    ///flag undefined input
 
-  spotify.search({
-    type: 'track',
-    query: input
-  }, function(err, data) {
-    if (err) {
-      console.log('Error occurred: ' + err);
-      return;
+    if (typeof input == 'undefined') {
+      flag = true;
+      input = "sign";
     }
 
-    if (flag && input == "sign") {
-      // search through results for the artist "ace of base", then return its results
+    /// Run search
 
-      for (i = 0; i < data.tracks.items.length; i++) {
-
-        if (data.tracks.items[i].album.artists[0].name == "Ace of Base") {
-          console.log(i);
-          console.log("Result " + (i + 1));
-          console.log("===========");
-          console.log("The artist: " + data.tracks.items[i].album.artists[0].name);
-          console.log("The album name: " + data.tracks.items[i].album.name);
-          console.log("The song's name: " + data.tracks.items[i].name);
-          console.log("A preview link of the song from Spotify: " + data.tracks.items[i].preview_url);
-          console.log("");
-        }
-
+    spotify.search({
+      type: 'track',
+      query: input
+    }, function(err, data) {
+      if (err) {
+        console.log('Error occurred: ' + err);
+        return;
       }
 
-    } else {
+      /// if undefined, run default, which is the artist "ace of base", then return its results
+
+      if (flag && input == "sign") {
+
+        //show results: 
+        for (i = 0; i < data.tracks.items.length; i++) {
+          if (data.tracks.items[i].album.artists[0].name == "Ace of Base") {
+            console.log(i);
+            console.log("Result " + (i + 1));
+            console.log("===========");
+            console.log("The artist: " + data.tracks.items[i].album.artists[0].name);
+            console.log("The album name: " + data.tracks.items[i].album.name);
+            console.log("The song's name: " + data.tracks.items[i].name);
+            console.log("A preview link of the song from Spotify: " + data.tracks.items[i].preview_url);
+            console.log("");
+          }
+        }
+      } 
+
+      /// if search term included, find it. 
+
+    else {
+      //this capitalizes the first letter
       var input1 = input[0].toUpperCase() + input.substring(1);
 
+      //show results: 
       for (i = 0; i < data.tracks.items.length; i++) {
-        if ((data.tracks.items[i].name).includes(input1)) {
+        // if ((data.tracks.items[i].name).includes(input1)) {
+            console.log(i);
+          // var artist=data.tracks.items[i].album.artists[0].name;
+          // dataToAdd.push(artist);
+          // var album =data.tracks.items[i].album.name;
+          // dataToAdd.push(album);
+          // var song = data.tracks.items[i].name;
+          // dataToAdd.push(song);
+          // var preview = data.tracks.items[i].preview_url;
+          // dataToAdd.push(preview);
+
+          // console.log(dataToAdd);
           console.log("Result " + (i + 1));
           console.log("===========");
           console.log("The artist: " + data.tracks.items[i].album.artists[0].name);
@@ -88,13 +135,15 @@ if (command == "my-tweets") {
           console.log("The song's name: " + data.tracks.items[i].name);
           console.log("A preview link of the song from Spotify: " + data.tracks.items[i].preview_url);
           console.log("");
-        }
-      }
-    }
 
-  });
+        
+        // }//if
+      } // for ends
+    }//else
 
-}
+  });//function
+
+} //end spotify
 
 /////////////////////////////////////////////////////////////////
 else if (command == 'movie-this') {
@@ -108,7 +157,7 @@ else if (command == 'movie-this') {
     // If there were no errors and the response code was 200 (i.e. the request was successful)...
     if (!error && response.statusCode === 200) {
 
-      console.log(JSON.parse(body));
+      
 
       console.log("The movie's title is: " + JSON.parse(body).Title);
       console.log("The movie's rating is: " + JSON.parse(body).imdbRating);
@@ -117,41 +166,26 @@ else if (command == 'movie-this') {
       console.log("The plot of the movie is: " + JSON.parse(body).Plot);
       console.log("The actors in the movie are: " + JSON.parse(body).Actors);
       console.log("The Rotten Tomatoes URL is ???");
-    } else if (errror) {
-      console.log(error);
-    }
-  });
+    } 
+      else if (error) {
+        console.log(error);
+         }
+  }); //request
 
-} else if (command == "do-what-it-says") {
-
-  fs.read("random.txt", "utf8", function (error, input) {
- spotify.search({
-    type: 'track',
-    query: input
-  }, function(err, data) {
-    if (err) {
-      console.log('Error occurred: ' + err);
-      return;
-    }
-
-         var input1 = input[0].toUpperCase() + input.substring(1);
-
-      for (i = 0; i < data.tracks.items.length; i++) {
-        if ((data.tracks.items[i].name).includes(input1)) {
-          console.log("Result " + (i + 1));
-          console.log("===========");
-          console.log("The artist: " + data.tracks.items[i].album.artists[0].name);
-          console.log("The album name: " + data.tracks.items[i].album.name);
-          console.log("The song's name: " + data.tracks.items[i].name);
-          console.log("A preview link of the song from Spotify: " + data.tracks.items[i].preview_url);
-          console.log("");
-        }
-      }
-  })
-  // * Using the `fs` Node package, LIRI will take the text inside of random.txt and then use it to call one of LIRI's commands.
-  //     * It should run `spotify-this-song` for "I Want it That Way," as follows the text in `random.txt`.
-  //     * Feel free to change the text in that document to test out the feature for other commands.
-}
+} //movie ends
+///////////////////////////
+ 
+  // fs.appendFile("log.txt", dataToAdd, function(err) {
+  //   if (err) { 
+  //     console.log(err)
+  //   }
+  //     else {
+  //       console.log("content added")
+  //     }
+  //   });
+ 
+     // dataToAdd=[];
+}//search()
 
 // ### BONUS
 
