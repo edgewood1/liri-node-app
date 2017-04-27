@@ -1,7 +1,4 @@
-//spotify saves to log.txt
-//next, get twitter and movies 
-//how to clear log.txt? 
-//how to retrieve past searches? 
+//fix read in order to better read past searches. 
 
 //requires
 
@@ -18,192 +15,227 @@ var consumerSecret = liri.twitterKeys.consumer_secret;
 var accessTokenKey = liri.twitterKeys.access_token_key;
 var accessTokenSecret = liri.twitterKeys.access_token_secret;
 
-//variables 
+//variables
 
 var command = process.argv[2];
 var input = process.argv[3];
 var flag;
-var dataToAdd=[];
 
+//constructor
+
+function SaveData() {
+  // this.Name = name;
+  this.data = [];
+  this.addData = function(item) {
+    this.data.push(item); //error
+  };
+}
+
+var twitter = new SaveData();
+var spotify1 = new SaveData();
+var movie = new SaveData();
 
 /////////////////////////////////////////////////////////READ RANDOM.TXT FILE ////////////
-if (command == "do-what-it-says") {
-
-  fs.readFile("random.txt", "utf8", function (error, data) {
-    var a=data.indexOf(",");
-    command=data.slice(0,(a)); 
-    input=data.slice(a+1);
+if (command === "do-what-it-says") {
+  fs.readFile("random.txt", "utf8", function(error, data) {
+    var a = data.indexOf(",");
+    command = data.slice(0, a);
+    input = data.slice(a + 1);
     console.log(command);
     console.log(input);
     search();
   });
-
+} else {
+  search();
 }
-else {search()}
 
-function search() {  
+function search() {
+  //////////////////////////////////////////////////////TWITTER
 
-//////////////////////////////////////////////////////TWITTER
+  if (command === "my-tweets") {
+    var client = new Twitter({
+      consumer_key: consumerKey,
+      consumer_secret: consumerSecret,
+      access_token_key: accessTokenKey,
+      access_token_secret: accessTokenSecret
+    });
 
-if (command == "my-tweets") {
-
-  var client = new Twitter({
-    consumer_key: consumerKey,
-    consumer_secret: consumerSecret,
-    access_token_key: accessTokenKey,
-    access_token_secret: accessTokenSecret
-  });
-
-  var params = {
-    screen_name: 'nodejs'
-  };
-  client.get('statuses/user_timeline', params, function(error, tweets, response) {
-    if (!error) {
-      for (i = 0; i < 10; i++) {
-        var info = tweets[i].text;
-        console.log ("Result " + (i+1));
-        console.log ("**********")
-        console.log(info);
-        console.log ("");
+    var params = {
+      screen_name: "nodejs"
+    };
+    client.get("statuses/user_timeline", params, function(
+      error,
+      tweets,
+      response
+    ) {
+      if (!error) {
+        for (i = 0; i < 10; i++) {
+          var info = tweets[i].text;
+          console.log("Result " + (i + 1));
+          console.log("**********");
+          console.log(info);
+          console.log("");
+          twitter.addData(info);
+        } //end for
+        write(twitter.data);
+      } //end if
+    });
+  } 
+  //////////////////////////////////////////////READ
+  else if (command === "read") {
+  
+    read();
+  } 
+  /////////////////////////////////////////////CLEAR
+  else if (command === "clear") {
+    fs.writeFile("log.txt", " ", function(err) {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log("log.txt is cleared");
       }
+    });
+  } 
 
-    }
-  });
-
-///////////////////////////////////////////////////////SPOTIFY 
-
-} 
-
-  else if (command == 'spotify-this-song') {
-
-    ///flag undefined input
-
-    if (typeof input == 'undefined') {
+  ///////////////////////////////////////////////////////SPOTIFY
+  else if (command === "spotify-this-song") {
+    
+    if (typeof input === "undefined") {
       flag = true;
       input = "sign";
     }
 
     /// Run search
-
-    spotify.search({
-      type: 'track',
-      query: input
-    }, function(err, data) {
-      if (err) {
-        console.log('Error occurred: ' + err);
-        return;
-      }
-
-      /// if undefined, run default, which is the artist "ace of base", then return its results
-
-      if (flag && input == "sign") {
-
-        //show results: 
-        for (i = 0; i < data.tracks.items.length; i++) {
-          if (data.tracks.items[i].album.artists[0].name == "Ace of Base") {
-            console.log(i);
-            console.log("Result " + (i + 1));
-            console.log("===========");
-            console.log("The artist: " + data.tracks.items[i].album.artists[0].name);
-            console.log("The album name: " + data.tracks.items[i].album.name);
-            console.log("The song's name: " + data.tracks.items[i].name);
-            console.log("A preview link of the song from Spotify: " + data.tracks.items[i].preview_url);
-            console.log("");
-          }
+    spotify.search(
+      {
+        type: "track",
+        query: input
+      },
+      function(err, data) {
+        if (err) {
+          console.log("Error occurred: " + err);
+          return;
         }
-      } 
 
-      /// if search term included, find it. 
+        /// if undefined, run default, which is the artist "ace of base", then return its results
 
-    else {
-      //this capitalizes the first letter
-      var input1 = input[0].toUpperCase() + input.substring(1);
+        if (flag && input === "sign") {
+          //show results:
+          for (i = 0; i < data.tracks.items.length; i++) {
+            if (data.tracks.items[i].album.artists[0].name === "Ace of Base") {
+              console.log(i);
+              console.log("Result " + (i + 1));
+              console.log("============");
+              console.log(
+                "The artist: " + data.tracks.items[i].album.artists[0].name
+              );
+              console.log("The album name: " + data.tracks.items[i].album.name);
+              console.log("The song's name: " + data.tracks.items[i].name);
+              console.log(
+                "A preview link of the song from Spotify: " +
+                  data.tracks.items[i].preview_url
+              );
+              console.log("");
+            }
+          }
+        } 
+        else {
+          /// if search term included, find it.
+          //this capitalizes the first letter
+          var input1 = input[0].toUpperCase() + input.substring(1);
 
-      //show results: 
-      for (i = 0; i < data.tracks.items.length; i++) {
-        // if ((data.tracks.items[i].name).includes(input1)) {
-            
-          var artist=data.tracks.items[i].album.artists[0].name;
-          dataToAdd.push(artist);
-          var album =data.tracks.items[i].album.name;
-          dataToAdd.push(album);
-          var song = data.tracks.items[i].name;
-          dataToAdd.push(song);
-          var preview = data.tracks.items[i].preview_url;
-          dataToAdd.push(preview);
-          // console.log("Array "+ i + " " + dataToAdd);
-          
-          console.log("Result " + (i + 1));
-          console.log("===========");
-          console.log("The artist: " + data.tracks.items[i].album.artists[0].name);
-          console.log("The album name: " + data.tracks.items[i].album.name);
-          console.log("The song's name: " + data.tracks.items[i].name);
-          console.log("A preview link of the song from Spotify: " + data.tracks.items[i].preview_url);
-          console.log("");
+          //show results:
+          for (i = 0; i < data.tracks.items.length; i++) {
+            // if ((data.tracks.items[i].name).includes(input1)) {
 
-        // }//if
-      } // for ends
-      write();
-    }//else
+            var artist = data.tracks.items[i].album.artists[0].name;
+            spotify1.addData(artist);
+            var album = data.tracks.items[i].album.name;
+            spotify1.addData(album);
+            var song = data.tracks.items[i].name;
+            spotify1.addData(song);
+            var preview = data.tracks.items[i].preview_url;
+            spotify1.addData(preview);
 
-  });//function
-
-} //end spotify
-
-/////////////////////////////////////////////////////////////////MOVIE 
-else if (command == 'movie-this') {
-
-  if (typeof input == 'undefined') {
-    input = "Mr. Nobody";
-  }
-
-  request("http://www.omdbapi.com/?t=" + input + "&y=&plot=short&r=json", function(error, response, body) {
-
-    // If there were no errors and the response code was 200 (i.e. the request was successful)...
-    if (!error && response.statusCode === 200) {
-
-      
-
-      console.log("The movie's title is: " + JSON.parse(body).Title);
-      console.log("The movie's rating is: " + JSON.parse(body).imdbRating);
-      console.log("The country where the movie was produced: " + JSON.parse(body).Country);
-      console.log("The language of the movie: " + JSON.parse(body).Language);
-      console.log("The plot of the movie is: " + JSON.parse(body).Plot);
-      console.log("The actors in the movie are: " + JSON.parse(body).Actors);
-      console.log("The Rotten Tomatoes URL is ???");
-    } 
-      else if (error) {
-        console.log(error);
-         }
-  }); //request
-
-} //movie ends
-
-///////////////////////////Adds to a file
-//Spotify's dataToAdd array should be full, but here it shows as empty. 
-
-}//search()
- function write(){
- // console.log(dataToAdd);
-  fs.appendFile("log.txt", dataToAdd, function(err) {
-    if (err) { 
-      console.log(err)
-    }
-      else {
-        // console.log(dataToAdd);
-        console.log("content added")
+            console.log("Result " + (i + 1));
+            console.log("============");
+            console.log("The artist: " + artist);
+            console.log("The album name: " + album);
+            console.log("The song's name: " + song);
+            console.log("A preview link of the song from Spotify: " + preview);
+          } // for ends
+          write(spotify1.data);
+        } //else
       }
-    });
+    ); //function
+  } 
+  //////////////////////////////////////////////////////////movie
+  else if (command === "movie-this") {
+    
+    if (typeof input === "undefined") {
+      input = "Mr. Nobody";
+    }
+
+    request(
+      "http://www.omdbapi.com/?t=" +
+        input +
+        "&y=&plot=short&r=json&tomatoes=true",
+      function(error, response, body) {
+        // If there were no errors and the response code was 200 (i.e. the request was successful)...
+        if (!error && response.statusCode === 200) {
+          var title = JSON.parse(body).Title;
+          var rating = JSON.parse(body).imdbRating;
+          var country = JSON.parse(body).Country;
+          var language = JSON.parse(body).Language;
+          var plot = JSON.parse(body).Plot;
+          var actors = JSON.parse(body).Actors;
+          var tUrl = JSON.parse(body).tomatoURL;
+
+          console.log("The movie's title is: " + title);
+          console.log("The movie's rating is: " + rating);
+          console.log("The country where the movie was produced: " + country);
+          console.log("The language of the movie: " + language);
+          console.log("The plot of the movie is: " + plot);
+          console.log("The actors in the movie are: " + actors);
+          console.log("The Rotten Tomatoes URL is: " + tUrl);
+
+          movie.addData(title);
+          movie.addData(rating);
+          movie.addData(country);
+          movie.addData(language);
+          movie.addData(plot);
+          movie.addData(actors);
+          movie.addData(tUrl);
+          write(movie.data);
+        } 
+        else if (error) {
+          console.log(error);
+        }
+      }
+    ); //request
+  } //movie ends
+} //search()
+
+///////////////////////////Write
+function write(info) {
+  
+  fs.appendFile("log.txt", info, function(err) {
+    if (err) {
+      console.log(err);
+    } else {
+  
+      console.log("content added to log.txt");
+     
+    }
+  }); //end function
+} //end write
+
+////////////////////////////reads
+function read() {
+  fs.readFile("log.txt", "utf8", function(error, data) {
+    var dataArr = data.split(",");
+    for (i = 0; i < dataArr.length; i++) {
+      console.log(dataArr[i]);
+    }
+  });
 }
-     // dataToAdd=[];
-
-
-// ### BONUS
-
-// * In addition to logging the data to your terminal/bash window, output the data to a .txt file called `log.txt`.
-
-// * Make sure you append each command you run to the `log.txt` file. 
-
-// * Do not overwrite your file each time you run a command.
-
-// - - - 
